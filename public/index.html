@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟化学实验平台</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 虚拟化学实验平台</h1>
+            <div class="mode-switcher">
+                <button class="mode-btn active" data-mode="basic">基础实验</button>
+                <button class="mode-btn" data-mode="design">实验设计</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="control-panel" id="basic-mode">
+                <h2>实验控制</h2>
+                
+                <div class="control-group">
+                    <label>反应类型</label>
+                    <select id="reaction-type" class="form-select">
+                        <option value="thiosulfate">硫代硫酸钠与酸</option>
+                        <option value="iodine-clock">碘钟反应</option>
+                        <option value="enzyme">酶催化反应</option>
+                        <option value="precipitation">沉淀反应</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>反应物A浓度: <span id="concA-value">0.1</span> mol/L</label>
+                    <input type="range" id="concA" min="0.01" max="1.0" step="0.01" value="0.1">
+                </div>
+
+                <div class="control-group">
+                    <label>反应物B浓度: <span id="concB-value">0.1</span> mol/L</label>
+                    <input type="range" id="concB" min="0.01" max="1.0" step="0.01" value="0.1">
+                </div>
+
+                <div class="control-group">
+                    <label>温度: <span id="temperature-value">25</span> °C</label>
+                    <input type="range" id="temperature" min="0" max="100" step="5" value="25">
+                </div>
+
+                <div class="control-group">
+                    <label>催化剂/酶量: <span id="catalyst-value">0</span></label>
+                    <input type="range" id="catalyst" min="0" max="20" step="1" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>pH值: <span id="ph-value">7</span></label>
+                    <input type="range" id="ph" min="1" max="14" step="0.5" value="7">
+                </div>
+
+                <div class="button-group">
+                    <button id="start-btn" class="btn btn-primary">▶ 开始反应</button>
+                    <button id="reset-btn" class="btn btn-secondary">🔄 重置</button>
+                    <button id="titration-btn" class="btn btn-info">🧪 滴定</button>
+                    <button id="separation-btn" class="btn btn-warning">⚗️ 分离</button>
+                </div>
+
+                <div class="result-display">
+                    <div class="result-item">
+                        <span>反应时间:</span>
+                        <span id="reaction-time">0.00 s</span>
+                    </div>
+                    <div class="result-item">
+                        <span>反应速率:</span>
+                        <span id="reaction-rate">0.0000</span>
+                    </div>
+                    <div class="result-item">
+                        <span>转化率:</span>
+                        <span id="conversion">0%</span>
+                    </div>
+                    <div class="result-item">
+                        <span>产物量:</span>
+                        <span id="product-amount">0.00 mol</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel hidden" id="design-mode">
+                <h2>实验设计模式</h2>
+                
+                <div class="design-section">
+                    <h3>实验步骤序列</h3>
+                    <div id="steps-list" class="steps-list"></div>
+                    <div class="step-controls">
+                        <select id="step-type" class="form-select">
+                            <option value="reaction">添加反应</option>
+                            <option value="heating">加热</option>
+                            <option value="cooling">冷却</option>
+                            <option value="titration">滴定</option>
+                            <option value="filtration">过滤</option>
+                            <option value="centrifugation">离心</option>
+                        </select>
+                        <button id="add-step-btn" class="btn btn-small btn-primary">+ 添加步骤</button>
+                    </div>
+                </div>
+
+                <div class="design-section">
+                    <h3>步骤参数配置</h3>
+                    <div id="step-config" class="step-config">
+                        <p class="hint">选择一个步骤进行配置</p>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="run-design-btn" class="btn btn-primary">▶ 运行设计</button>
+                    <button id="clear-design-btn" class="btn btn-danger">清空设计</button>
+                    <button id="save-design-btn" class="btn btn-success">保存方案</button>
+                </div>
+            </div>
+
+            <div class="experiment-area">
+                <div class="beaker-container">
+                    <div class="beaker" id="main-beaker">
+                        <div class="beaker-liquid" id="reaction-liquid"></div>
+                        <div class="beaker-bubbles" id="bubbles"></div>
+                        <div class="beaker-marking">
+                            <span class="mark" style="top: 20%">100</span>
+                            <span class="mark" style="top: 40%">80</span>
+                            <span class="mark" style="top: 60%">60</span>
+                            <span class="mark" style="top: 80%">40</span>
+                            <span class="mark" style="top: 95%">20</span>
+                        </div>
+                    </div>
+                    <div class="thermometer">
+                        <div class="thermometer-liquid" id="thermometer-liquid"></div>
+                        <span class="temp-label" id="temp-label">25°C</span>
+                    </div>
+                </div>
+                
+                <div class="process-display">
+                    <div class="progress-item">
+                        <div class="progress-label">反应进度</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                    </div>
+                    <div class="ph-indicator">
+                        <div class="ph-label">pH值</div>
+                        <div class="ph-scale" id="ph-scale">
+                            <div class="ph-pointer" id="ph-pointer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="equipment-panel">
+                    <div class="equipment" id="burette">
+                        <div class="burette">
+                            <div class="burette-liquid" id="burette-liquid"></div>
+                            <div class="burette-tap" id="burette-tap"></div>
+                        </div>
+                        <div class="equipment-label">滴定管</div>
+                    </div>
+                    <div class="equipment" id="filter">
+                        <div class="filter-paper">
+                            <div class="filter-residue" id="filter-residue"></div>
+                        </div>
+                        <div class="equipment-label">过滤装置</div>
+                    </div>
+                    <div class="equipment" id="collector">
+                        <div class="collector-flask">
+                            <div class="collector-liquid" id="collector-liquid"></div>
+                        </div>
+                        <div class="equipment-label">收集瓶</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <h2>实时数据监测</h2>
+                <div class="chart-tabs">
+                    <button class="chart-tab active" data-chart="conversion">转化率</button>
+                    <button class="chart-tab" data-chart="rate">反应速率</button>
+                    <button class="chart-tab" data-chart="temperature">温度</button>
+                    <button class="chart-tab" data-chart="ph">pH值</button>
+                </div>
+                <canvas id="main-chart"></canvas>
+                
+                <div class="reaction-info">
+                    <h3 id="reaction-name">硫代硫酸钠与酸反应</h3>
+                    <p id="reaction-equation">Na₂S₂O₃ + H₂SO₄ → Na₂SO₄ + S↓ + SO₂↑ + H₂O</p>
+                    <div class="phenomenon" id="reaction-phenomenon">
+                        <strong>实验现象：</strong>
+                        <span id="phenomenon-text">溶液逐渐变浑浊，产生淡黄色沉淀</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="records-panel">
+            <h2>
+                <span>实验记录</span>
+                <button id="load-records-btn" class="btn btn-small btn-info">加载记录</button>
+            </h2>
+            <div class="table-container">
+                <table id="records-table">
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>反应类型</th>
+                            <th>浓度A</th>
+                            <th>浓度B</th>
+                            <th>温度</th>
+                            <th>pH</th>
+                            <th>催化剂</th>
+                            <th>时间</th>
+                            <th>转化率</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="titration-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>🧪 虚拟滴定</h3>
+                    <button class="modal-close" id="close-titration">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="titration-setup">
+                        <div class="burette-large">
+                            <div class="burette-scale">
+                                <span>0</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span>
+                            </div>
+                            <div class="burette-liquid-large" id="burette-liquid-large"></div>
+                            <div class="burette-tap-large" id="burette-tap-large"></div>
+                        </div>
+                        <div class="flask-large">
+                            <div class="flask-liquid" id="flask-liquid"></div>
+                            <div class="magnetic-stirrer"></div>
+                        </div>
+                    </div>
+                    <div class="titration-controls">
+                        <div class="control-row">
+                            <label>滴定剂浓度: <span id="titrant-conc-display">0.1</span> mol/L</label>
+                            <input type="range" id="titrant-conc" min="0.01" max="0.5" step="0.01" value="0.1">
+                        </div>
+                        <div class="control-row">
+                            <label>滴加速度</label>
+                            <div class="speed-btns">
+                                <button class="speed-btn" data-speed="slow">慢速</button>
+                                <button class="speed-btn active" data-speed="medium">中速</button>
+                                <button class="speed-btn" data-speed="fast">快速</button>
+                            </div>
+                        </div>
+                        <div class="titration-stats">
+                            <span>已滴加: <strong id="titrated-volume">0.00</strong> mL</span>
+                            <span>浓度计算: <strong id="calculated-conc">0.00</strong> mol/L</span>
+                        </div>
+                        <div class="button-group">
+                            <button id="start-titration-btn" class="btn btn-primary">开始滴定</button>
+                            <button id="stop-titration-btn" class="btn btn-danger">停止</button>
+                            <button id="reset-titration-btn" class="btn btn-secondary">重置</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="separation-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>⚗️ 产物分离</h3>
+                    <button class="modal-close" id="close-separation">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="separation-process">
+                        <div class="separation-step active" data-step="1">
+                            <div class="step-icon">📋</div>
+                            <div class="step-name">准备</div>
+                        </div>
+                        <div class="separation-arrow">→</div>
+                        <div class="separation-step" data-step="2">
+                            <div class="step-icon">🔬</div>
+                            <div class="step-name">过滤</div>
+                        </div>
+                        <div class="separation-arrow">→</div>
+                        <div class="separation-step" data-step="3">
+                            <div class="step-icon">🌀</div>
+                            <div class="step-name">离心</div>
+                        </div>
+                        <div class="separation-arrow">→</div>
+                        <div class="separation-step" data-step="4">
+                            <div class="step-icon">🔥</div>
+                            <div class="step-name">干燥</div>
+                        </div>
+                        <div class="separation-arrow">→</div>
+                        <div class="separation-step" data-step="5">
+                            <div class="step-icon">⚖️</div>
+                            <div class="step-name">称量</div>
+                        </div>
+                    </div>
+                    
+                    <div class="separation-equipment">
+                        <div class="equipment-view" id="filter-view">
+                            <div class="filter-funnel">
+                                <div class="filter-paper-large">
+                                    <div class="residue" id="separation-residue"></div>
+                                </div>
+                            </div>
+                            <div class="beaker-small">
+                                <div class="filtrate" id="filtrate-liquid"></div>
+                            </div>
+                        </div>
+                        <div class="equipment-view hidden" id="centrifuge-view">
+                            <div class="centrifuge">
+                                <div class="centrifuge-rotor" id="centrifuge-rotor"></div>
+                                <div class="centrifuge-tube" id="centrifuge-tube"></div>
+                            </div>
+                        </div>
+                        <div class="equipment-view hidden" id="dry-view">
+                            <div class="oven">
+                                <div class="oven-heat" id="oven-heat"></div>
+                                <div class="sample-dish" id="sample-dish"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="separation-results">
+                        <div class="result-grid">
+                            <div class="result-card">
+                                <div class="result-label">固体产物质量</div>
+                                <div class="result-value" id="solid-mass">0.00 g</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">液体产物体积</div>
+                                <div class="result-value" id="liquid-volume">0.00 mL</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">分离纯度</div>
+                                <div class="result-value" id="separation-purity">0%</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">产率</div>
+                                <div class="result-value" id="separation-yield">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="next-separation-btn" class="btn btn-primary">下一步</button>
+                        <button id="auto-separation-btn" class="btn btn-info">自动完成</button>
+                        <button id="reset-separation-btn" class="btn btn-secondary">重置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
